@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # helper.py
 
-import os, socket, requests, time
+import os, socket, requests
 from cloudflare_dns import find_record, add_record, delete_record
 
 get_timeout = int(os.environ["GET_TIMEOUT"])

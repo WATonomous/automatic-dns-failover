@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # cloudflare_dns.py
 
-import requests, time, json, os
+import requests, json, os
 
 def find_record(ip_addr, zone_id):
     # finds the record with the corresponding ip_addr and

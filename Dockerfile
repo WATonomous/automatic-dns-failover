@@ -18,4 +18,4 @@ RUN pip install requests
 #ENV DOWN_NUM=2
 #ENV DOMAINS="watonomous.com:alvin-test,10.0.50.114,10.0.50.116:alvin-test2,10.0.50.113,10.0.50.115"
 
-CMD ["python3", "main.py"]
+CMD ["python3", "-u", "main.py"]
