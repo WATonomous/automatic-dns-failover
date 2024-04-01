@@ -8,10 +8,13 @@ from helper import get_domains_from_env, monitor
 # reading environment variable
 delay = int(os.environ["DELAY"])
 domain_subdomain_ips = get_domains_from_env() # dictionary of domain to ip_addrs
-cloudflare_watcher_num = int(os.environ["CLOUDFLARE_WATCHER_NUM"])
+cloudflare_refresh_period_ticks = int(os.environ["CLOUDFLARE_REFRESH_PERIOD_TICKS"])
 
 # dictionary of domain to zone_id
 domain_dict = find_zones_under_account()
+
+print(domain_dict)
+print(domain_subdomain_ips)
 
 # initialization of variables
 uptime = {}
@@ -23,7 +26,7 @@ for domain in domain_subdomain_ips:
         ip_addr_list = domain_subdomain_ips[domain][subdomain]
         uptime[FQDN] = [0] * len(ip_addr_list)
         downtime[FQDN] = [0] * len(ip_addr_list)
-        recorded[FQDN] = [find_record(ip_addr_list[i], domain_dict[domain])[1] for i in range(len(ip_addr_list))]
+        recorded[FQDN] = [find_record(ip_addr_list[i], FQDN, domain_dict[domain])[1] for i in range(len(ip_addr_list))]
 
 # infinite loop
 count = 0
@@ -33,12 +36,12 @@ while True:
     # periodically check the status of records on cloudflare to update recorded
     # will add the record back up if someone manually deletes it on cloudflare by accident
     count += 1
-    if count == cloudflare_watcher_num:
+    if count == cloudflare_refresh_period_ticks:
         for domain in domain_subdomain_ips:
             for subdomain in domain_subdomain_ips[domain]:
                 FQDN = subdomain + '.' + domain
                 ip_addr_list = domain_subdomain_ips[domain][subdomain]
-                recorded[FQDN] = [find_record(ip_addr_list[i], domain_dict[domain])[1] for i in range(len(ip_addr_list))]
+                recorded[FQDN] = [find_record(ip_addr_list[i], FQDN, domain_dict[domain])[1] for i in range(len(ip_addr_list))]
         count = 0
         
     # actual work

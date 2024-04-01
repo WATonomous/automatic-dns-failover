@@ -5,8 +5,8 @@ import os, socket, requests
 from cloudflare_dns import find_record, add_record, delete_record
 
 get_timeout = int(os.environ["GET_TIMEOUT"])
-up_num = int(os.environ["UP_NUM"])
-down_num = int(os.environ["DOWN_NUM"])
+up_threshold = int(os.environ["UP_THRESHOLD"])
+down_threshold = int(os.environ["DOWN_THRESHOLD"])
 
 dns_cache = {}
 # override the default dns resolver that requests.get calls under the hood
@@ -42,11 +42,11 @@ def monitor(subdomain, FQDN, ip_addr_list, uptime, downtime, recorded, zone_id):
     for i in range(len(ip_addr_list)):
         try:
             dns_cache[FQDN] = ip_addr_list[i]
-            response = requests.get(f"http://{FQDN}:8080", timeout=get_timeout)
+            response = requests.get(f"http://{FQDN}", timeout=get_timeout)
             print(f"{FQDN}: {ip_addr_list[i]} UP")
             uptime[i] += 1
             downtime[i] = 0
-            if not recorded[i] and uptime[i] >= up_num:
+            if not recorded[i] and uptime[i] >= up_threshold:
                 # add record to cloudflare dns zone
                 success = add_record(ip_addr_list[i], subdomain, zone_id)
                 if success:
@@ -60,9 +60,9 @@ def monitor(subdomain, FQDN, ip_addr_list, uptime, downtime, recorded, zone_id):
             print(f"{FQDN}: {ip_addr_list[i]} NO ANSWER")
             uptime[i] = 0
             downtime[i] += 1
-            if downtime[i] == down_num and recorded[i]:
+            if downtime[i] == down_threshold and recorded[i]:
                 # find dns id of the host
-                record_id, found = find_record(ip_addr_list[i], zone_id)
+                record_id, found = find_record(ip_addr_list[i], FQDN, zone_id)
                 if found:
                     # delete record from cloudflare dns zone
                     success = delete_record(record_id, zone_id)
