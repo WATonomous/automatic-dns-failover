@@ -1,4 +1,4 @@
-name: Create and publish Docker images
+name: Create and publish two Docker images
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
       - main
 
 env:
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_1: automatic-dns-failover
+  IMAGE_2: custom-nginx
+  IMAGE_REPOSITORY: ${{ github.repository }}
   IMAGE_REGISTRY: ghcr.io
   REGISTRY_USER: ${{ github.actor }}
   REGISTRY_PASSWORD: ${{ github.token }}
@@ -29,18 +31,34 @@ jobs:
           username: ${{ env.REGISTRY_USER }}
           password: ${{ env.REGISTRY_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Extract metadata (tags, labels) for the first image
+        id: meta1
         uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e
         with:
-          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_1 }}
 
-      - name: Build and push Docker image
+      - name: Extract metadata (tags, labels) for the second image
+        id: meta2
+        uses: docker/metadata-action@c4ee3adeed93b1fa6a762f209fb01608c1a22f1e
+        with:
+          images: ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_REPOSITORY }}/${{ env.IMAGE_2 }}
+
+      - name: Build and push the first image
         uses: docker/build-push-action@91df6b874e498451163feb47610c87c4a218c1ee
         with:
           context: .
           push: true
           build-args: |
             DOCKER_METADATA_OUTPUT_JSON
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.meta1.outputs.tags }}
+          labels: ${{ steps.meta1.outputs.labels }}
+
+      - name: Build and push the second image
+        uses: docker/build-push-action@91df6b874e498451163feb47610c87c4a218c1ee
+        with:
+          context: .
+          push: true
+          build-args: |
+            DOCKER_METADATA_OUTPUT_JSON
+          tags: ${{ steps.meta2.outputs.tags }}
+          labels: ${{ steps.meta2.outputs.labels }}
