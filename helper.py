@@ -36,46 +36,46 @@ def within_range(status_code_range, status_code):
     return False
 
 def string_match(string1, string2):
-    return string1==string2
+    return string1==string2 or string1 == "random_string"
 
-def monitor(subdomain, FQDN, ip_addr_list, uptime, downtime, recorded, zone_id):
-    for i in range(len(ip_addr_list)):
+def monitor(subdomain, FQDN, record_list, uptime, downtime, recorded, zone_id):
+    for i in range(len(record_list)):
         try:
-            dns_cache[FQDN] = ip_addr_list[i]["ip_address"]
-            # TODO: add path in the URL
-            response = requests.get(f"http://{FQDN}:{ip_addr_list[i]['port']}", timeout=get_timeout)
-            # TODO: make default range an environment variable
-            status_code_range = ip_addr_list[i]["status_code_range"] if ip_addr_list[i].get("status_code_range") else [[200, 299]]
-            if not within_range(status_code_range, int(response.status_code)) or not string_match(ip_addr_list[i]["match_string"], response.text):
+            dns_cache[FQDN] = record_list[i]["ip_address"]
+            response = requests.get(f"http://{FQDN}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')}", timeout=get_timeout)
+            status_code_range = record_list[i].get("status_code_range", [[200,299]])
+            if not within_range(status_code_range, int(response.status_code)) or not string_match(record_list[i].get("match_string", "random_string"), response.text):
                 raise requests.RequestException()
-            print(f"{FQDN}: {ip_addr_list[i]['ip_address']} with port {ip_addr_list[i]['port']} and path {ip_addr_list[i]['path']} UP")
+            
+            # node is up
+            print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} UP")
             uptime[i] += 1
             downtime[i] = 0
             if not recorded[i] and uptime[i] >= up_threshold:
                 # add record to cloudflare dns zone
-                success = add_record(ip_addr_list[i]["ip_address"], subdomain, zone_id)
+                success = add_record(record_list[i]['ip_address'], subdomain, zone_id)
                 if success:
-                    print(f"{FQDN}: {ip_addr_list[i]['ip_address']} ADD SUCCESSFUL")
+                    print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} ADD SUCCESSFUL")
                     recorded[i] = True
                 else:
-                    print(f"{FQDN}: {ip_addr_list[i]['ip_address']} ADD FAILED")
+                    print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} ADD FAILED")
                 uptime[i] == 0
         except:
-            # failed connection (node is potentially down)
-            print(f"{FQDN}: {ip_addr_list[i]['ip_address']} NO ANSWER")
+            # node is not right
+            print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} NO ANSWER")
             uptime[i] = 0
             downtime[i] += 1
             if downtime[i] == down_threshold and recorded[i]:
-                # find dns id of the host
-                record_id, found = find_record(ip_addr_list[i]["ip_address"], FQDN, zone_id)
+                # node is down
+                record_id, found = find_record(record_list[i]['ip_address'], FQDN, zone_id)
                 if found:
                     # delete record from cloudflare dns zone
                     success = delete_record(record_id, zone_id)
                     if success:
                         recorded[i] = False
-                        print(f"{FQDN}: {ip_addr_list[i]['ip_address']} DELETE SUCCESSFUL")
+                        print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} DELETE SUCCESSFUL")
                     else:
-                        print(f"{FQDN}: ATTENTION! couldn't delete {ip_addr_list[i]['ip_address']} with its record id")
+                        print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} DELETE FAILED")
                 else:
-                    print(f"{FQDN}: record id of {ip_addr_list[i]['ip_address']} cannot be found on cloudflare")
+                    print(f"{record_list[i]['ip_address']}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')} not found on cloudflare")
                 downtime[i] = 0

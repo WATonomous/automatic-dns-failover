@@ -51,7 +51,8 @@ def add_record(ip_addr, subdomain, zone_id):
     payload = {
         "content": f"{ip_addr}",
         "name": subdomain,
-        "type": "A"
+        "type": "A",
+        "comment": "Managed by automatic-dns-failover project"
     }
     
     headers = {
@@ -61,11 +62,10 @@ def add_record(ip_addr, subdomain, zone_id):
     
     response = requests.request("POST", url, json=payload, headers=headers).json()
     return response["success"]
-    
 
 def find_zones_under_account():
     # returns a dictionary of domain name: zone_id
-
+    
     url = "https://api.cloudflare.com/client/v4/zones"
     
     headers = {
@@ -75,7 +75,7 @@ def find_zones_under_account():
     
     response = requests.request("GET", url, headers=headers).json()
     if response["success"]:
-        domain_dict = {}
+        domain_zone_id = {}
         count = response["result_info"]["count"]
         per_page = response["result_info"]["per_page"]
         total_pages = int(count/per_page) + (count%per_page>0)
@@ -83,6 +83,6 @@ def find_zones_under_account():
             response = requests.request("GET", url+f"?page={i}", headers=headers).json()
             result = response["result"]
             for j in range(len(result)):
-                domain_dict[result[j]["name"]] = result[j]["id"]
+                domain_zone_id[result[j]["name"]] = result[j]["id"]
     
-    return domain_dict
+    return domain_zone_id
