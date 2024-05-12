@@ -6,7 +6,7 @@ from cloudflare_dns import find_record, find_zones_under_account
 from helper import get_hosts_from_env, monitor
 
 # reading environment variable
-delay = int(os.environ["DELAY"])
+tick_duration_s = int(os.environ["TICK_DURATION_S"])
 domain_subdomain_ips = get_hosts_from_env() # dictionary of domain to ip_addrs
 cloudflare_refresh_period_ticks = int(os.environ["CLOUDFLARE_REFRESH_PERIOD_TICKS"])
 
@@ -38,7 +38,7 @@ for j, domain in enumerate(domain_subdomain_ips["domains"]):
 # infinite loop
 count = 0
 while True:
-    time.sleep(delay)
+    time.sleep(tick_duration_s)
     
     # periodically check the status of records on cloudflare to update recorded
     # will add the record back up if someone manually deletes it on cloudflare by accident
