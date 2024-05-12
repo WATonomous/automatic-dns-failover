@@ -16,9 +16,6 @@ domain_zone_id = find_zones_under_account()
 print(domain_subdomain_ips)
 print(domain_zone_id)
 
-# this delay is needed because of the overlapping existence of a terminating container/pod and a new container/pod
-time.sleep(30)
-
 # initialization of variables
 uptime = {}
 downtime = {}
