@@ -42,7 +42,7 @@ def monitor(subdomain, FQDN, record_list, uptime, downtime, recorded, zone_id):
     for i in range(len(record_list)):
         try:
             dns_cache[FQDN] = record_list[i]["ip_address"]
-            response = requests.get(f"http://{FQDN}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')}", timeout=get_timeout)
+            response = requests.get(f"http://{FQDN}:{record_list[i].get('port', 80)}{record_list[i].get('path', '/')}", timeout=get_timeout_s)
             status_code_range = record_list[i].get("status_code_range", [[200,299]])
             if not within_range(status_code_range, int(response.status_code)) or not string_match(record_list[i].get("match_string", "random_string"), response.text):
                 raise requests.RequestException()
